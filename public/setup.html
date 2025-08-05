@@ -17,43 +17,23 @@
     <form id="setup-form">
       <div class="input-group">
         <label for="device-id">Device ID (Arduino):</label>
-        <input type="text" id="device-id" name="device-id" required>
+        <input type="text" id="device-id" placeholder="Device ID" inputmode="numeric" pattern="\d*" required>
       </div>
 
       <div class="input-group">
         <label for="length">Length (cm):</label>
-        <input type="number" id="length" name="distance" min="1" required>
+        <input type="number" id="length" name="distance" min="1" placeholder="Length" required>
       </div>
 
       <div class="input-group">
         <label for="height">Height (cm):</label>
-        <input type="number" id="height" name="distance" min="1" required>
+        <input type="number" id="height" name="distance" min="1" placeholder="Height" required>
       </div>
 
       <button class="btn2" type="submit">Continue to Scheduler</button>
     </form>
   </div>
-
-  <script>
-    document.getElementById("setup-form").addEventListener("submit", function (e) {
-      e.preventDefault();
-
-      const deviceId = document.getElementById("device-id").value.trim();
-      const length = document.getElementById("length").value.trim();
-      const height = document.getElementById("height").value.trim();
-
-      if (!deviceId || !length || !height) {
-        alert("Please fill in all fields.");
-        return;
-      }
-
-      localStorage.setItem("wipyDeviceId", deviceId);
-      localStorage.setItem("wipyLength", length);
-      localStorage.setItem("wipyHeight", height);
-
-      window.location.href = "schedule.html";
-    });
-  </script>
+<script src="setup.js"></script>
 </body>
 
 </html>
