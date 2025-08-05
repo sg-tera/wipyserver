@@ -1,55 +1,54 @@
-/**
- * スケジュールJSONを、指定された降順でKICプロトコル文字列に変換する関数
+/*
+ * KIC Protocol V3 に従って、スケジュールJSONをKICプロトコル文字列に変換する関数
  * @param {object} integratedData - 内部で統合されたスケジュールデータ
- * @returns {string} 順序制御されたKICプロトコル文字列
+ * @returns {string} KICプロトコル V3 文字列
  */
 function convertJsonToKicWithOrder(integratedData) {
-    // 送信時刻をHHMM形式で生成
     const now = new Date();
+
+    // 1. [送信曜日][送信時刻] フィールドを生成
+    const dayOfWeek = now.getDay(); // 日曜=0, 月曜=1, ...
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    const transmissionTime = `${hours}${minutes}`;
+    const transmissionHeader = `${dayOfWeek}${hours}${minutes}`;
 
+    // 2. [黒板長さ] フィールドを生成
+    let dimensionsBlock = '00000000'; // データがない場合のデフォルト値
+    if (integratedData.dimensions && integratedData.dimensions.width && integratedData.dimensions.height) {
+        dimensionsBlock = `${String(integratedData.dimensions.width).padStart(4, '0')}${String(integratedData.dimensions.height).padStart(4, '0')}`;
+    }
+
+    // 3. [スケジュールブロック] を曜日番号6->0の降順で生成
     const scheduleBlocks = [];
-
-    // KICプロトコルで定められた曜日記号と、対応するデータキーの降順リスト
     const dayOrder = [
-        // { symbol: 9, key: 'extra' },
-        // { symbol: 8, key: 'undefined' },
-        { symbol: 7, key: 'dimensions' },
-        { symbol: 6, key: 'sat' },
-        { symbol: 5, key: 'fri' },
-        { symbol: 4, key: 'thu' },
-        { symbol: 3, key: 'wed' },
-        { symbol: 2, key: 'tue' },
-        { symbol: 1, key: 'mon' },
-        { symbol: 0, key: 'sun' }
+        { key: 'sat', symbol: 6 },
+        { key: 'fri', symbol: 5 },
+        { key: 'thu', symbol: 4 },
+        { key: 'wed', symbol: 3 },
+        { key: 'tue', symbol: 2 },
+        { key: 'mon', symbol: 1 },
+        { key: 'sun', symbol: 0 }
     ];
 
-    // 固定された降順リストに従ってループ処理
     for (const dayInfo of dayOrder) {
-        let blockContent = '';
-
-        if (dayInfo.symbol === 7) {
-            if (integratedData.dimensions && integratedData.dimensions.width && integratedData.dimensions.height) {
-                blockContent = `${integratedData.dimensions.width}${integratedData.dimensions.height}`;
-            }
-        } else {
-            if (integratedData.schedules && integratedData.schedules[dayInfo.key] && integratedData.schedules[dayInfo.key].length > 0) {
-                blockContent = integratedData.schedules[dayInfo.key].join('');
-            }
-        }
-
-        if (blockContent) {
-            scheduleBlocks.push(`${dayInfo.symbol}${blockContent}`);
+        if (integratedData.schedules && integratedData.schedules[dayInfo.key] && integratedData.schedules[dayInfo.key].length > 0) {
+            const timesStr = integratedData.schedules[dayInfo.key].join('');
+            scheduleBlocks.push(`${dayInfo.symbol}${timesStr}`);
         }
     }
 
-    const kicString = `KIC:V1;${transmissionTime};${scheduleBlocks.join(';')};/`;
+    // 4. 全てのフィールドを ';' で結合
+    const parts = [
+        'KIC:V3',
+        transmissionHeader,
+        dimensionsBlock,
+        ...scheduleBlocks
+    ];
+    const kicString = `${parts.join(';')};/`;
+
     return kicString;
 }
 
-// ★重要：関数をオブジェクトに含めてエクスポートする
 module.exports = {
     convertJsonToKicWithOrder
 };
